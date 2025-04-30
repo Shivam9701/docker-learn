@@ -184,6 +184,21 @@ docker run my-python-app:v1
 ```
 This allows easier version control and rollback.
 
+### 3.8 Auto-Cleanup Containers Using --rm 🧼
+If you want to run a container and automatically remove it after it exits, use:
+
+```bash
+docker run --rm image_name
+```
+This is ideal for one-off tasks like scripts, quick Python commands, or debugging tools.
+
+Example:
+```bash
+docker run --rm python:3.9 python --version
+```
+Once the command completes, the container is deleted immediately.
+Use this to keep your system clean and avoid clutter from exited containers.
+
 ---
 
 ## Module 4: Dockerizing Python Applications 🐍
@@ -288,7 +303,7 @@ COPY . .
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-### 4.4 Run the FastAPI Container
+#### Run the FastAPI Container
 ```bash
 docker build -t fastapi-app .
 docker run -p 8000:8000 fastapi-app
@@ -298,7 +313,7 @@ Visit `http://localhost:8000` for the app. Check `/docs` for Swagger UI.
 
 ---
 
-### 4.5 Exercise: Dockerizing a CLI Python Aggregator 📊
+### 4.4 Exercise: Dockerizing a CLI Python Aggregator 📊
 
 Create a Dockerized CLI app that:
 - Reads a CSV file from a provided **input filename**
@@ -318,5 +333,50 @@ docker run -v $(pwd):/app cli-aggregator input.csv city sales sum output.csv
 - `requirements.txt` if any
 
 > Input and output file mapping will only work properly when using Docker volume mounts (`-v`), which we will explore in more depth in a future module.
+
+---
+
+## 4.5 **Using `-p` (Ports) and `-v` (Volumes) Explained** 
+
+### 🧩 `-p host_port:container_port`
+Used to **expose a container port** to your host so you can access web apps, APIs, or dashboards.
+
+Example:
+```bash
+docker run -p 8000:8000 fastapi-app
+```
+This maps:
+- Port `8000` inside the container
+- To port `8000` on your host
+
+### 📂 `-v host_path:container_path`
+Used to **mount local files/folders** into the container. Essential for:
+- Reading inputs
+- Writing outputs
+- Live reloading during development
+
+Example:
+```bash
+docker run -v $(pwd):/app cli-aggregator ...
+```
+
+This maps:
+- Local `$(pwd)` to `/app` in the container
+- Allowing files to be shared back and forth
+
+---
+
+## 🔹 **Module 4 – Docker Commands Recap** 🧰
+
+| Command | Purpose |
+|--------|---------|
+| `docker build -t app-name .` | Build an image from a Dockerfile |
+| `docker run image` | Run a container from an image |
+| `docker run --rm image` | Auto-clean container after run |
+| `docker run -v host:container` | Share folders/files |
+| `docker run -p host:container` | Expose container ports |
+| `ENTRYPOINT` | Set the executable to run |
+| `CMD` | Set default args (overridable) |
+| `docker logs container` | View logs from running container |
 
 ---
