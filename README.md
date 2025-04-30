@@ -380,3 +380,260 @@ This maps:
 | `docker logs container` | View logs from running container |
 
 ---
+
+# 🧱 **Module 5: Docker Compose & Multi-Container Projects**
+
+---
+
+## ✅ **5.1 What is Docker Compose?**
+
+**Docker Compose** is a tool that lets you define and run multi-container Docker applications using a YAML file.
+
+### 🔥 Why Use Compose?
+- Run **multiple services** (e.g., Flask + Redis + PostgreSQL)
+- Set up **networks, volumes, and environments** all in one place
+- **One command** (`docker compose up`) to build and run everything
+- Ideal for **local development**, **testing**, and **production orchestration**
+
+### 📂 Without Compose
+```bash
+docker run -d --name redis redis:alpine
+docker run -d --name flask-app --link redis -p 5000:5000 flask-image
+```
+
+### 📂 With Compose
+```bash
+docker compose up
+```
+
+🎯 **Simpler. Reproducible. Scalable.**
+
+---
+
+## ✅ **5.2 Anatomy of `docker-compose.yml`**
+
+Here’s what a basic Compose file looks like:
+
+```yaml
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+    restart: always
+
+  redis:
+    image: redis:alpine
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: always
+
+volumes:
+  redis_data:
+```
+
+### 🧠 Key Components:
+| Section      | Purpose |
+|--------------|---------|
+| `services`   | Lists containers to be managed |
+| `build`      | Build image from local Dockerfile |
+| `image`      | Pull image from Docker Hub |
+| `ports`      | Map host port to container port |
+| `volumes`    | Persist data across container restarts |
+| `depends_on` | Start this container **after** another |
+| `networks`   | Create private bridges for service communication |
+
+---
+
+## ✅ **5.3 Real Project: Flask + Redis with Compose**
+
+### 🔧 What We’ll Build
+A small Python (Flask) web app that:
+- Connects to Redis
+- Increments a counter on each visit (`/`)
+- Lets you reset it (`/reset`)
+
+---
+
+### 📁 Folder Structure
+```
+compose-counter/
+├── app/
+│   ├── app.py
+│   └── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+```
+
+---
+
+### 📄 app/app.py
+```python
+from flask import Flask, jsonify
+import redis
+
+app = Flask(__name__)
+r = redis.Redis(host='redis', port=6379, decode_responses=True)
+
+@app.route('/')
+def count_visits():
+    count = r.incr('visits')
+    return jsonify({'visits': count})
+
+@app.route('/reset')
+def reset_visits():
+    r.set('visits', 0)
+    return jsonify({'message': 'Counter reset to 0'})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+```
+
+---
+
+### 📄 app/requirements.txt
+```
+flask
+redis
+```
+
+---
+
+### 📄 Dockerfile
+```Dockerfile
+FROM python:3.9
+
+WORKDIR /app
+
+COPY app/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app/ .
+
+CMD ["python", "app.py"]
+```
+
+---
+
+### 📄 docker-compose.yml
+```yaml
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+    restart: always
+
+  redis:
+    image: redis:alpine
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: always
+
+volumes:
+  redis_data:
+```
+
+---
+
+## ✅ **5.4 Key Compose Features Explained**
+
+### 🔗 `depends_on`
+Ensures `redis` starts before `web`:
+```yaml
+depends_on:
+  - redis
+```
+
+> ⚠ Note: This doesn't **wait for Redis to be ready**—just ensures the container starts first.
+
+---
+
+### 🏗 `build` vs `image`
+
+- `build: .` → Build from Dockerfile in current directory
+- `image: redis:alpine` → Pull prebuilt image from Docker Hub
+
+---
+
+### 📦 `volumes`
+```yaml
+volumes:
+  - redis_data:/data
+```
+- Persists Redis data across container restarts
+- Named volumes declared at the bottom:
+```yaml
+volumes:
+  redis_data:
+```
+
+---
+
+### 🌐 `ports`
+```yaml
+ports:
+  - "5000:5000"
+```
+- Maps port 5000 on your host to port 5000 inside the container
+- Access at `http://localhost:5000`
+
+---
+
+### 🔁 `restart: always`
+Auto-restart container on:
+- Crash
+- Docker daemon reboot
+
+---
+
+## ✅ 💻 How to Run the Project
+
+### 1. Navigate to the folder:
+```bash
+cd compose-counter
+```
+
+### 2. Build and run everything:
+```bash
+docker compose up --build
+```
+
+### 3. Run in background:
+```bash
+docker compose up -d
+```
+
+### 4. Visit the app:
+- `http://localhost:5000/` → increments counter
+- `http://localhost:5000/reset` → resets counter
+
+### 5. Stop & clean everything:
+```bash
+docker compose down
+```
+---
+
+## ✅ **5.5 Docker Compose Commands (In-Depth)**
+
+| Command | Purpose |
+|--------|---------|
+| `docker compose up` | Build & run all services (attached) |
+| `docker compose up -d` | Run in **detached** background mode |
+| `docker compose down` | Stop and remove containers, network, volumes |
+| `docker compose ps` | List running containers |
+| `docker compose logs` | View logs for all services |
+| `docker compose logs <service>` | Logs for one service |
+| `docker compose exec <service> bash` | Open shell inside a container |
+| `docker compose restart` | Restart all containers |
+| `docker compose build` | Rebuild Docker images |
+| `docker compose up --scale web=3` | Scale out services horizontally 🔥 |
+
+---
+
